@@ -1,7 +1,12 @@
 name: Cypress Tests
 
-on: [push]
-
+on: 
+  workflow_dispatch:
+    inputs:
+      cli:
+        description: Run by cypress command line
+        default: npx cypress run
+          
 jobs:
   cypress-electron-tests:
     runs-on: ubuntu-latest
@@ -13,4 +18,4 @@ jobs:
         run: npm install
 
       - name: Run E2E test
-        run: npx cypress run
+        run: ${{ github.event.inputs.cli }}
