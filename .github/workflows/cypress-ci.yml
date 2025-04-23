@@ -21,6 +21,7 @@ jobs:
         run: ${{ github.event.inputs.cli }}
 
   cypress-chrome-tests:
+    needs:  cypress-electron-tests
     runs-on: ubuntu-24.04
     container:
       image: cypress/browsers:22.12.0
