@@ -5,7 +5,7 @@ on:
     inputs:
       cli:
         description: Run by cypress command line
-        default: npx cypress run
+        default: node runner.js
           
 jobs:
   cypress-electron-tests:
