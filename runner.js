@@ -8,7 +8,7 @@ cypress.run({
 })
 .then((results) => {
   const args = {
-    target: ${{ secrets.TARGET.TOKEN}},
+    target: process.env.TARGET_TOKEN,
   }
   tesults.results(results, args);
 })
