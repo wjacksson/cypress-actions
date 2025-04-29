@@ -2,14 +2,13 @@ name: Cypress Tests
 
 on: 
   workflow_dispatch:
-    inputs:
-      cli:
-        description: Run by cypress command line
-        default: node runner.js
           
 jobs:
   cypress-electron-tests:
     runs-on: ubuntu-latest
+    container:
+      image: cypress/browsers:22.12.0
+      options: --user 1001
     steps: 
       - name: Get code
         uses: actions/checkout@v4
@@ -18,7 +17,9 @@ jobs:
         run: npm install
 
       - name: Run E2E test
-        run: ${{ github.event.inputs.cli }}
+        run: node runner.js
+    env:
+      TARGET_TOKEN: ${{ secrets.TARGET_TOKEN }}
 
   cypress-chrome-tests:
     needs:  cypress-electron-tests
@@ -34,9 +35,8 @@ jobs:
         run: npm install
         
       - name: Run E2E test
-        uses: cypress-io/github-action@v6
-        with:
-          browser: chrome
-       
+        run: node runner.js
+    env:
+      TARGET_TOKEN: ${{ secrets.TARGET_TOKEN }}
 
         
