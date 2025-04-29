@@ -1,40 +1,73 @@
-name: Cypress Tests
+name: Optimized Cypress Tests
 
-on: 
+on:
   workflow_dispatch:
 
 jobs:
-  cypress-electron-tests:
+  setup:
+    name: Setup and Install Dependencies
     runs-on: ubuntu-latest
-    container:
-      image: cypress/browsers:22.12.0
-      options: --user 1001
-    steps: 
-      - name: Checkout do código
+    steps:
+      - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Instalar dependências
+      - name: Cache node_modules
+        uses: actions/cache@v3
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-node-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      - name: Install Dependencies
         run: npm install
 
-      - name: Rodar testes com Electron
-        run: node runner.js electron
-        env:
-          TARGET_TOKEN: ${{ secrets.TARGET_TOKEN }}
+      - name: Upload node_modules Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: node-modules
+          path: node_modules
 
-  cypress-chrome-tests:
-    needs: cypress-electron-tests
+  cypress-electron-tests:
+    name: Run Cypress Tests in Electron
+    needs: setup
     runs-on: ubuntu-latest
     container:
       image: cypress/browsers:22.12.0
       options: --user 1001
     steps:
-      - name: Checkout do código
+      - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Instalar dependências
-        run: npm install
+      - name: Download node_modules
+        uses: actions/download-artifact@v4
+        with:
+          name: node-modules
+          path: node_modules
 
-      - name: Rodar testes com Chrome
+      - name: Run Electron Tests
+        run: node runner.js electron
+        env:
+          TARGET_TOKEN: ${{ secrets.TARGET_TOKEN }}
+
+  cypress-chrome-tests:
+    name: Run Cypress Tests in Chrome
+    needs: setup
+    runs-on: ubuntu-latest
+    container:
+      image: cypress/browsers:22.12.0
+      options: --user 1001
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Download node_modules
+        uses: actions/download-artifact@v4
+        with:
+          name: node-modules
+          path: node_modules
+
+      - name: Run Chrome Tests
         run: node runner.js chrome
         env:
           TARGET_TOKEN: ${{ secrets.TARGET_TOKEN }}
