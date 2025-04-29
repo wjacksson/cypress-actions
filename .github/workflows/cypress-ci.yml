@@ -4,16 +4,19 @@ on:
   workflow_dispatch:
 
 jobs:
-  cypress-electron-tests:
+  setup:
     runs-on: ubuntu-latest
     container:
       image: cypress/browsers:22.12.0
       options: --user 1001
+    outputs:
+      cache-key: ${{ steps.cache-setup.outputs.cache-key }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
       - name: Cache node_modules
+        id: cache-node-modules
         uses: actions/cache@v4
         with:
           path: node_modules
@@ -25,8 +28,33 @@ jobs:
           path: ~/.cache/Cypress
           key: cypress-cache-${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
 
+      - name: Cache npm
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: npm-cache-${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
+
       - name: Install dependencies
         run: npm install
+
+  cypress-electron-tests:
+    needs: setup
+    runs-on: ubuntu-latest
+    container:
+      image: cypress/browsers:22.12.0
+      options: --user 1001
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Restore caches
+        uses: actions/cache@v4
+        with:
+          path: |
+            node_modules
+            ~/.cache/Cypress
+            ~/.npm
+          key: node-modules-${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
 
       - name: Run E2E tests (Electron)
         run: node runner.js electron
@@ -34,6 +62,7 @@ jobs:
           TARGET_TOKEN: ${{ secrets.TARGET_TOKEN }}
 
   cypress-chrome-tests:
+    needs: setup
     runs-on: ubuntu-latest
     container:
       image: cypress/browsers:22.12.0
@@ -42,20 +71,14 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Cache node_modules
+      - name: Restore caches
         uses: actions/cache@v4
         with:
-          path: node_modules
+          path: |
+            node_modules
+            ~/.cache/Cypress
+            ~/.npm
           key: node-modules-${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
-
-      - name: Cache Cypress binary
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/Cypress
-          key: cypress-cache-${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
-
-      - name: Install dependencies
-        run: npm install
 
       - name: Run E2E tests (Chrome)
         run: node runner.js chrome
