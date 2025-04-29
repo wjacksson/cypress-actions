@@ -4,75 +4,60 @@ on:
   workflow_dispatch:
 
 jobs:
-  setup:
-    runs-on: ubuntu-latest
-    outputs:
-      node-modules-cache-key: ${{ steps.cache-modules.outputs.cache-primary-key }}
-    steps:
-      - name: Checkout do código
-        uses: actions/checkout@v4
-
-      - name: Cache do Cypress binary
-        uses: actions/cache@v3
-        with:
-          path: ~/.cache/Cypress
-          key: cypress-cache-${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
-          restore-keys: |
-            cypress-cache-${{ runner.os }}-
-
-      - name: Cache do node_modules
-        id: cache-modules
-        uses: actions/cache@v3
-        with:
-          path: node_modules
-          key: modules-${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
-          restore-keys: |
-            modules-${{ runner.os }}-
-
-      - name: Instalar dependências
-        run: npm install
-
-      - name: Instalar binário do Cypress
-        run: npx cypress install
-
   cypress-electron-tests:
-    needs: setup
     runs-on: ubuntu-latest
     container:
       image: cypress/browsers:22.12.0
       options: --user 1001
     steps:
-      - name: Checkout do código
+      - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Instalar dependências
+      - name: Cache node_modules
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: node-modules-${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
+
+      - name: Cache Cypress binary
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/Cypress
+          key: cypress-cache-${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
+
+      - name: Install dependencies
         run: npm install
 
-      - name: Instalar binário do Cypress
-        run: npx cypress install
-
-      - name: Rodar testes no Electron
+      - name: Run E2E tests (Electron)
         run: node runner.js electron
         env:
           TARGET_TOKEN: ${{ secrets.TARGET_TOKEN }}
 
   cypress-chrome-tests:
-    needs: cypress-electron-tests
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     container:
       image: cypress/browsers:22.12.0
       options: --user 1001
     steps:
-      - name: Checkout do código
+      - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Instalar dependências
+      - name: Cache node_modules
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: node-modules-${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
+
+      - name: Cache Cypress binary
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/Cypress
+          key: cypress-cache-${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
+
+      - name: Install dependencies
         run: npm install
 
-      - name: Instalar binário do Cypress
-        run: npx cypress install
-
-      - name: Rodar testes no Chrome
+      - name: Run E2E tests (Chrome)
         run: node runner.js chrome
         env:
           TARGET_TOKEN: ${{ secrets.TARGET_TOKEN }}
