@@ -1,73 +1,78 @@
-name: Optimized Cypress Tests
+name: Cypress Tests
 
 on:
   workflow_dispatch:
 
 jobs:
   setup:
-    name: Setup and Install Dependencies
     runs-on: ubuntu-latest
+    outputs:
+      node-modules-cache-key: ${{ steps.cache-modules.outputs.cache-primary-key }}
     steps:
-      - name: Checkout Code
+      - name: Checkout do código
         uses: actions/checkout@v4
 
-      - name: Cache node_modules
+      - name: Cache do Cypress binary
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/Cypress
+          key: cypress-cache-${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            cypress-cache-${{ runner.os }}-
+
+      - name: Cache do node_modules
+        id: cache-modules
         uses: actions/cache@v3
         with:
           path: node_modules
-          key: ${{ runner.os }}-node-${{ hashFiles('package-lock.json') }}
+          key: modules-${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
           restore-keys: |
-            ${{ runner.os }}-node-
+            modules-${{ runner.os }}-
 
-      - name: Install Dependencies
+      - name: Instalar dependências
         run: npm install
 
-      - name: Upload node_modules Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: node-modules
-          path: node_modules
+      - name: Instalar binário do Cypress
+        run: npx cypress install
 
   cypress-electron-tests:
-    name: Run Cypress Tests in Electron
     needs: setup
     runs-on: ubuntu-latest
     container:
       image: cypress/browsers:22.12.0
       options: --user 1001
     steps:
-      - name: Checkout Code
+      - name: Checkout do código
         uses: actions/checkout@v4
 
-      - name: Download node_modules
-        uses: actions/download-artifact@v4
-        with:
-          name: node-modules
-          path: node_modules
+      - name: Instalar dependências
+        run: npm install
 
-      - name: Run Electron Tests
+      - name: Instalar binário do Cypress
+        run: npx cypress install
+
+      - name: Rodar testes no Electron
         run: node runner.js electron
         env:
           TARGET_TOKEN: ${{ secrets.TARGET_TOKEN }}
 
   cypress-chrome-tests:
-    name: Run Cypress Tests in Chrome
-    needs: setup
-    runs-on: ubuntu-latest
+    needs: cypress-electron-tests
+    runs-on: ubuntu-24.04
     container:
       image: cypress/browsers:22.12.0
       options: --user 1001
     steps:
-      - name: Checkout Code
+      - name: Checkout do código
         uses: actions/checkout@v4
 
-      - name: Download node_modules
-        uses: actions/download-artifact@v4
-        with:
-          name: node-modules
-          path: node_modules
+      - name: Instalar dependências
+        run: npm install
 
-      - name: Run Chrome Tests
+      - name: Instalar binário do Cypress
+        run: npx cypress install
+
+      - name: Rodar testes no Chrome
         run: node runner.js chrome
         env:
           TARGET_TOKEN: ${{ secrets.TARGET_TOKEN }}
