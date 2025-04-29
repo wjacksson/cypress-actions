@@ -1,17 +1,24 @@
-const cypress = require('cypress')
+const cypress = require('cypress');
 const tesults = require('cypress-tesults-reporter');
 
-//const TOKEN = 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpZCI6ImM5Y2I2YTJkLTNkZjMtNDAwNC1hNTEwLTJmYWY5MTIxNWFkYy0xNzQ1NDk5MzM0Nzg2IiwiZXhwIjo0MTAyNDQ0ODAwMDAwLCJ2ZXIiOiIwIiwic2VzIjoiNDRiYWM0ODctMGU4Ny00ZTUzLTgzZGQtMzA4MThmYzA3YzVhIiwidHlwZSI6InQifQ.mz50Grk0j8Y_f56I53gkSWmkmXiKHZRhVdWxTYLoKz8'
+// Captura o nome do navegador via argumento de terminal, com fallback para 'electron'
+const browser = process.argv[2] || 'electron';
+
+console.log(`🔧 Executando Cypress com o navegador: ${browser}`);
 
 cypress.run({
-  // specs to run here
+  browser: browser,
+  // Você pode adicionar filtros como spec ou configFile aqui se necessário
 })
 .then((results) => {
   const args = {
     target: process.env.TARGET_TOKEN,
-  }
+  };
+
+  console.log('📦 Enviando resultados para o Tesults...');
   tesults.results(results, args);
 })
 .catch((err) => {
- console.error(err)
-})
+  console.error('❌ Erro ao rodar Cypress:', err);
+  process.exit(1);
+});
